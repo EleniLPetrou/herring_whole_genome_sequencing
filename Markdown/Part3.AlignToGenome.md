@@ -274,45 +274,40 @@ conda deactivate
 Local realignment around indels allows us to correct mapping errors made by genome aligners and make read alignments more consistent in regions that contain indels.
 To learn more about why we do indel realignment, follow this tutorial: https://github.com/broadinstitute/gatk-docs/blob/master/gatk3-tutorials/(howto)_Perform_local_realignment_around_indels.md#section2
 
-New versions of GATK take care of indel realignment during variant calling. Thus, I had to download GATK3 (version 3.8-1) from Docker to be able to use the IndelRealigner tool independently from variant calling (I want to do variant calling in angsd, and that program does not realign around indels). This is how I installed GATK3 on Klone:
+New versions of GATK take care of indel realignment during variant calling. Thus, I had to download GATK3 (version 3.8-1) from an online reporsitory to be able to use the IndelRealigner tool independently from variant calling (I want to do variant calling in angsd, and that program does not realign around indels). This is how I installed GATK3 on Klone:
 
 ``` bash
-#How to use a Docker container in singularity: https://learningpatterns.me/posts/2018-04-05-gatk-singularity-docker-job-array/
-#How to bind paths to a singularity : https://sylabs.io/guides/3.0/user-guide/bind_paths_and_mounts.html
+#Create a conda environment for GATK3
+conda create -n gatk3_env
 
-#Start interactive session on klone
-srun -p compute-hugemem -A merlab --nodes=1 --ntasks-per-node=1 --time=01:00:00 --mem=80G --pty /bin/bash
+# enter the conda environment and download GATK3 from the web
+conda activate gatk3_env
+cd gatk3_env
+wget https://storage.googleapis.com/gatk-software/package-archive/gatk/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2
+tar xjf GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2
+ 
+#Test the installation:
+GATK3=/gscratch/merlab/software/miniconda3/envs/gatk3_env/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar
+java -jar $GATK3 -h 
 
-# Create a Singularity container from a Docker container
-module load singularity
-singularity pull docker://broadinstitute/gatk3:3.8-1
+#This should print out some version and usage information, as well as a list of the tools included in the GATK. As the Usage line states, to use GATK you will always build your command lines like this: java -jar GenomeAnalysisTK.jar -T  [arguments] 
 
-# Ok the singularity was able to make a .sif file from the Docker container and it is now saved here: /mmfs1/gscratch/merlab/singularity_sif/gatk3_3.8-1.sif
-
-# Let's try to bind the gscratch klone drive to the singularity: https://sylabs.io/guides/3.0/user-guide/bind_paths_and_mounts.html
-# YEEEEESSS!!! THIS WORKED!! You have to run this command at the start of every script that will use a singularity - but that is a-ok!
-
-export SINGULARITY_BIND="/mmfs1:/mnt"
-
-# After you run the above command, your gscratch directory will be here:
-/mnt/gscratch/scrubbed/
 
 ```
 
-Next, I ran the pipeline for indel realignment. This may take a while (2 weeks?) to finish. 
+Next, I ran the pipeline for indel realignment. The first step is to identify potential indels using infromation from all bam files. This took ~72 hours to finish for all samples.  
 
 ``` bash
-
 #!/bin/bash
-#SBATCH --job-name=elp_realign_indels
+#SBATCH --job-name=elp_RealignerTargetCreator
 #SBATCH --account=merlab
 #SBATCH --partition=compute-hugemem
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=8
 ## Walltime (days-hours:minutes:seconds format)
-#SBATCH --time=15-12:00:00
+#SBATCH --time=4-12:00:00
 ## Memory per node
-#SBATCH --mem=200G
+#SBATCH --mem=80G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elpetrou@uw.edu
 
@@ -325,85 +320,117 @@ BASEREFERENCE=GCF_900700415.1_Ch_v2.0.2_genomic #Name of genome without file ext
 SUFFIX1=_minq20_sorted_dedup_overlapclipped.bam #Suffix of the bam files that you would like to analyze using GATK3
 
 ## Specify some information about the conda environments, singularities, and names of intermediate files. You probably do NOT need to edit this information.
-MYSINGULARITY=/gscratch/merlab/singularity_sif/gatk3_3.8-1.sif # Path to the singularity with GATK3
-GATK3=/usr/GenomeAnalysisTK.jar # This is kind of obscure, but it is the path to the gatk3 jarfile INSIDE of the singularity virtual machine. Do NOT change this!!
-MOUNTDIR='/mnt'$DATADIR # Also obscure - when you run the singularity, the gscratch drive will be mounted to the /mnt drive within the singularity
 BAMLIST=bam_list_dedup_overlapclipped.list # A list of merged, deduplicated, and overlap-clipped bam files. This file has to have a suffix of ".list"!! This list will be made in line 55 and will be saved to the $DATADIR
 MYCONDA=/gscratch/merlab/software/miniconda3/etc/profile.d/conda.sh # path to conda installation on our Klone node. Do NOT change this.
+GATK3=/gscratch/merlab/software/miniconda3/envs/gatk3_env/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar # the path to the gatk3 jarfile
 SAMTOOLS_ENV=samtools_env #name of the conda environment running samtools
 PICARD_ENV=picard_env #name of the conda environment running picard
+GATK3_ENV=gatk3_env #name of the conda environment running gatk3
 
 ###############################################################################
 ## Clean the environment before starting
 module purge
 
-## Tell singularities that they need to have mount points to the gscratch directory - don't change this!
-export SINGULARITY_BIND="/mmfs1:/mnt"
-
 ## Source command will allow us to execute commands from a file in the current shell (conda)
 source $MYCONDA
 
 ###### CODE FOR ANALYSIS ####################################################
-## Copy the genome into the current $DATADIR (this seems silly, but it will make running the GATK3 singularity INFINITELY easier later on)
-cp $GENOMEDIR'/'$REFERENCE $DATADIR
-
-## Move into your data directory
-cd $DATADIR
-
 ## Use samtools to index the genome
 conda activate $SAMTOOLS_ENV
-samtools faidx $REFERENCE
+samtools faidx $GENOMEDIR'/'$REFERENCE
 
-## Make a text file containing a list of all the bam files you want to analyze
-for MYSAMPLEFILE in *$SUFFIX1
+# Make a text file containing a list of all the bam files you want to analyze
+for MYSAMPLEFILE in $DATADIR'/'*$SUFFIX1
 do
-echo $MOUNTDIR'/'$MYSAMPLEFILE >> $BAMLIST
+echo $MYSAMPLEFILE >> $BAMLIST
 done
 
-## Use samtools to index each bam file - this works!!
+# Use samtools to index each bam file - this works!!
 for MYSAMPLEFILE in $DATADIR'/'*$SUFFIX1
 do
 samtools index $MYSAMPLEFILE
 done
 
-## leave the samtools conda environment
+#leave the samtools conda environment
 conda deactivate 
 
 ###########################################
-## activate the picard conda environment
+# activate the picard conda environment
 conda activate $PICARD_ENV
 
-## create a sequence dictionary using picard for the reference genome (for some reason, GATK3 needs this file)
-cd $DATADIR
-picard CreateSequenceDictionary --REFERENCE $REFERENCE --OUTPUT $BASEREFERENCE.dict
+# create a sequence dictionary for the reference genome (for some ridiculous reason, GATK3 needs this file)
 
-## leave the picard conda environment
-conda deactivate 
+picard CreateSequenceDictionary --REFERENCE $GENOMEDIR'/'$REFERENCE --OUTPUT $GENOMEDIR'/'$BASEREFERENCE.dict
+#leave the picard conda environment
+conda deactivate
 
 ##############################################
-## Load the singularity module so you can run GATK3 as a singularity - woohoo!!
-module load singularity
+# activate the GATK3 conda environment
+conda activate $GATK3_ENV
+cd $DATADIR
 
-## Create a list of potential indels - this takes about 3 days to run
-singularity exec $MYSINGULARITY java -jar $GATK3 \
+# Create a list of potential indels
+java -jar $GATK3 \
 -T RealignerTargetCreator \
--R $MOUNTDIR'/'$REFERENCE \
--I $MOUNTDIR'/'$BAMLIST \
+-R $DATADIR'/'$REFERENCE \
+-I $DATADIR'/'$BAMLIST \
 -nt ${SLURM_JOB_CPUS_PER_NODE} \
--o $MOUNTDIR'/'all_samples_for_indel_realigner.intervals \
+-o $DATADIR'/'all_samples_for_indel_realigner.intervals \
 -drf BadMate
-
-
-## Run the indel realigner - Note : this does not support multithreading, annoyingly, so I think it might take ~12 days to run? I am a bit worried...
-singularity exec $MYSINGULARITY java -jar $GATK3 \
--T IndelRealigner \
--R $MOUNTDIR'/'$REFERENCE \
--I $MOUNTDIR'/'$BAMLIST \
--targetIntervals $MOUNTDIR'/'all_samples_for_indel_realigner.intervals \
---consensusDeterminationModel USE_READS \
---nWayOut $MOUNTDIR'/'_realigned.bam
-
-
 
 ```
 
+Next, each bam file was realigned around potential indels. This was slow (took 10 days to finish), as multithreading is not supported by IndelRealigner.
+
+``` bash
+#!/bin/bash
+#SBATCH --job-name=elp_IndelRealigner
+#SBATCH --account=merlab
+#SBATCH --partition=compute-hugemem
+#SBATCH --nodes=1
+## Walltime (days-hours:minutes:seconds format)
+#SBATCH --time=15-12:00:00
+## Memory per node
+#SBATCH --mem=300G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=elpetrou@uw.edu
+
+##### ENVIRONMENT SETUP ####################################################
+## Specify the directories and file names containing your data (edit lines 16-20 as needed)
+DATADIR=/gscratch/scrubbed/elpetrou/bam #path to the bam files that you want to analyze with GATK3
+GENOMEDIR=/gscratch/merlab/genomes/atlantic_herring #directory containing the genome
+REFERENCE=GCF_900700415.1_Ch_v2.0.2_genomic.fna # Name of genome
+BAMLIST=bam_list_dedup_overlapclipped.list # A list of merged, deduplicated, and overlap-clipped bam files. This file has to have a suffix of ".list"
+
+## Specify some information about the conda environments and names of intermediate files. You probably do NOT need to edit this information.
+GATK3=/gscratch/merlab/software/miniconda3/envs/gatk3_env/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef/GenomeAnalysisTK.jar # the path to the gatk3 jarfile
+MYCONDA=/gscratch/merlab/software/miniconda3/etc/profile.d/conda.sh # path to conda installation on our Klone node. Do NOT change this.
+GATK3_ENV=gatk3_env #name of the conda environment running gatk3
+
+
+## Source command will allow us to execute commands from a file in the current shell (conda)
+module purge
+source $MYCONDA
+conda activate $GATK3_ENV
+
+
+########## Code for Indel Realignment ###################
+
+## Move into the data directory so GATK3 writes output files here
+cd $DATADIR 
+
+## Run GATK3 IndelRealigner
+
+java -jar $GATK3 \
+-T IndelRealigner \
+-R $GENOMEDIR'/'$REFERENCE \
+-I $DATADIR'/'$BAMLIST \
+-targetIntervals $DATADIR'/'all_samples_for_indel_realigner.intervals \
+--consensusDeterminationModel USE_READS  \
+--nWayOut _realigned.bam
+
+## Leave gatk3 conda environment
+conda deactivate
+
+
+```
