@@ -78,32 +78,56 @@ mv *_fastqc $OUTDIR
 
 ## Visualize FastQC output using MultiQC
 
-I visualized the voluminous FastQC output using MultiQC software on Klone [using this script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/multiqc.sh)
+I visualized the voluminous FastQC output using MultiQC software on Klone
+
+First, I installed multiqc version 1.10.1 using conda:
+
+``` bash
+
+#Create a conda environment for multiqc
+conda create -n multiqc_env
+
+# To activate or enter the environments you just created simply type:
+conda activate multiqc_env
+
+# Once in the environment, install the versions of software that you want using conda:
+conda install -c bioconda -c conda-forge multiqc
 
 ```
-srun -p compute-hugemem -A merlab --nodes=1 \
---ntasks-per-node=1 --time=02:00:00 \
---mem=100G --pty /bin/bash
 
+Next, I ran multiqc in the folder that contained the fastqc output:
 
-# Specify the path and the name of the singularity you want to use
-DATADIR=/mmfs1/gscratch/scrubbed/elpetrou/fastqc
+``` bash
+
+# Request an interactive node 
+srun -p compute-hugemem -A merlab --nodes=1 --ntasks-per-node=1 --time=02:00:00 --mem=20G --pty /bin/bash
+
+# Specify some path locations
+
+MYCONDA=/gscratch/merlab/software/miniconda3/etc/profile.d/conda.sh # path to conda installation on our Klone node. Do NOT change this.
+MYENV=multiqc_env #name of the conda environment containing samtools software.
+DATADIR=/mmfs1/gscratch/scrubbed/elpetrou/fastqc #location of fastqc output files
+
+################################################################################
+## Activate the conda environment:
+
+## start with clean slate
+module purge
+
+## This is the filepath to our conda installation on Klone. Source command will allow us to execute commands from a file in the current shell
+source $MYCONDA
+
+## activate the conda environment
+conda activate $MYENV
+
+# Run multiqc
 
 cd $DATADIR
 
-
-# Load the singularity module
-module load singularity
-MYSINGULARITY=/mmfs1/gscratch/merlab/singularity_sif/containerised_ATACseq_pipeline_multiqc.sif
-
-# Use the singularity exec command to use the singularity and run commands that are specific to the software it contains (VCFtools, in this case)
-
-singularity exec \
-$MYSINGULARITY \
 multiqc .
 
-
 ```
+
 
 ### Results 
 Download the full [MultiQC html report here](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Markdown/multiqc_report.html)
