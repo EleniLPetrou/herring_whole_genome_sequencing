@@ -221,5 +221,7 @@ plot1
 ggsave("sequencing_depth_after_realignment.pdf", plot1)
 
 ```
+# Results
 
 The mean sequencing depth across the entire reference genome was 0.8X (median = 0.79, range = 0.24 – 4.73X)
+
