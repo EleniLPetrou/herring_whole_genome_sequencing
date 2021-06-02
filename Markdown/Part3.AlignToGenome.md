@@ -126,8 +126,16 @@ do
 done
 
 ```
+Next, I parsed the bowtie2 log files to estimate the average alignment rate across all samples. I did this quickly like this:
 
-On average, it looks like ~86% of sequences are aligning to the Atlantic herring genome and 55% are aligning uniquely. I hope this translates into some nice data downstream!
+``` bash
+LOGFILE=bowtie2_.out
+OUFILE=bowtie2_unique_alignments.txt
+
+grep -w "aligned concordantly exactly 1 time" $LOGFILE >> $OUTFILE
+```
+
+On average, it looks like ~86% of sequences are aligning to the Atlantic herring genome and 56% are aligning uniquely. I hope this translates into some nice data downstream!
 
 ## Use Samtools to convert sam to bam, format filter for quality & alignment, and sort bame files
 
