@@ -1,6 +1,6 @@
 # Estimate read depth bam files after indel realignment
 
-Using samtools, I estimated the read depth of each bam file after indel realignment using the script below. As far as I could tell, samtools depth command does not support multithreading, so it took about ~2 min to run for each sample. 
+Using samtools, I estimated the read depth of each bam file after indel realignment using the script below ("samtools_depth.sh"). As far as I could tell, samtools depth command does not support multithreading, so it took about ~2 min to run for each sample. 
 
 ``` bash
 #!/bin/bash
@@ -109,7 +109,7 @@ gc()
   
 ```
 
-I ran the above R script on klone, using the following sbatch script (sbatch_estimate_realigned_sequencing_depth.sh):
+I ran the above R script on klone, using the following sbatch script ("sbatch_estimate_realigned_sequencing_depth.sh"):
 
 ``` bash
 #!/bin/bash
