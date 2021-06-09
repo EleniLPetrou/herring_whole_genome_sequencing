@@ -440,5 +440,42 @@ java -jar $GATK3 \
 ## Leave gatk3 conda environment
 conda deactivate
 
+```
+
+## Back up realigned bam files to LOLO Archive
+
+Since bam realignment took such a long time, I decided to back up a copy of the realigned bam files (and the associated .bai files) to the LOLO archive: /archive/merlab/herring_wgs/realigned_bam
+
+Explanation of tar command:
+
+``` tar -zcvf archive-name.tar.gz source-directory-name ```
+
+-z : Compress archive using gzip program in Linux or Unix
+
+-c : Create archive on Linux
+
+-v : Verbose i.e display progress while creating archive
+
+-f : Archive File name
+
+``` bash
+
+# Compress all realigned bam files and transfer them to LOLO
+# I think this will take around 24 hours to do
+srun -p compute-hugemem -A merlab --nodes=1 --ntasks-per-node=1 --time=2-10:00:00 --mem=20G --pty /bin/bash
+
+cd /gscratch/scrubbed/elpetrou/realigned_bam
+
+# tar all the files in this directory
+tar -zcvf realigned_bam_archive.tar.gz /gscratch/scrubbed/elpetrou/realigned_bam
+
+# Transfer tarred archive from a hyak login node to LOLO
+MYFILE=/mmfs1/gscratch/scrubbed/elpetrou/realigned_bam/realigned_bam_archive.tar.gz
+TARGETDIR=elpetrou@lolo.uw.edu:/archive/merlab/herring_wgs/realigned_bam
+
+scp $MYFILE $TARGETDIR
+
+
 
 ```
+
