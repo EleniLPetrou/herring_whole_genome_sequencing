@@ -7,8 +7,8 @@ Sequencing data were downloaded from the NW Genomics Center using Globus softwar
   1. An external hard drive in my office
   2. The HauserLab fireproof external hard drive: ioSafe_HauserLab/Herring_Eleni/Herring_WholeGenomeSequencing_WA_AK
   3. Klone: /gscratch/scrubbed/elpetrou
+  4. LOLO Archive: /archive/merlab/herring_wgs/raw_sequences
 
-*NB: We should also back up the data on LOLO archive
 
 For each of these data backups, I used the MD5sum file to verify that the data were not corrupted. 
 
