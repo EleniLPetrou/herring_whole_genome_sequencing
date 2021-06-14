@@ -98,7 +98,9 @@ angsd -b $MYBAMLIST -ref $REFGENOME -out $OUTNAME \
 ```
 
 # Summary of results with filtering parameters used above :
- Done reading data waiting for calculations to finish
+
+
+``` Done reading data waiting for calculations to finish
 	-> Done waiting for threads
 	-> Output filenames:
 		->"all_samples_maf0.01.arg"
@@ -110,7 +112,7 @@ angsd -b $MYBAMLIST -ref $REFGENOME -out $OUTNAME \
 	-> Number of sites retained after filtering: 11380359 
 	[ALL done] cpu-time used =  1377495.38 sec
 	[ALL done] walltime used =  407206.00 sec
-	
+```	
 
 
  
