@@ -1,6 +1,6 @@
 # PCA using angsd output files
 
-First, I downloaded and installed pcangsd version 1.02 software on Klone:
+## First, I downloaded and installed pcangsd version 1.02 software on Klone:
 
 ``` bash
 # Directions from: http://www.popgen.dk/software/index.php/PCAngsdv2
@@ -35,5 +35,53 @@ pip install --user -r requirements.txt
 # Get help
 python pcangsd.py -h
 # woohoo! installation worked!!
+
+```
+
+## Next, I ran PCAngsd using some genotype likelihood files that I created in angsd
+
+``` bash
+
+#!/bin/bash
+#SBATCH --job-name=elp_angsd_variants
+#SBATCH --account=merlab
+#SBATCH --partition=compute-hugemem
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=16
+## Walltime (days-hours:minutes:seconds format)
+#SBATCH --time=8-12:00:00
+## Memory per node
+#SBATCH --mem=400G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=elpetrou@uw.edu
+
+
+#####################################################################
+##### ENVIRONMENT SETUP ##########
+
+## software information
+MYCONDA=/gscratch/merlab/software/miniconda3/etc/profile.d/conda.sh # path to conda installation on our Klone node. Do NOT change this.
+MYENV=pcangsd_env #name of the conda environment containing samtools software. 
+PCANGSD=/gscratch/merlab/software/miniconda3/envs/pcangsd/pcangsd.py #path to pcangsd software on Klone
+
+## data information
+DATADIR=/gscratch/scrubbed/elpetrou/angsd #path to input files (beagle file)
+OUTDIR=/gscratch/scrubbed/elpetrou/results #path to output files
+MYINFILE=all_samples_maf0.01.beagle.gz #name of beagle file
+OUTPREFIX=pca_all_samples_maf0.01 #prefix for output files
+
+##################################################################
+## Activate the conda environment:
+## start with clean slate
+module purge
+
+## This is the filepath to our conda installation on Klone. Source command will allow us to execute commands from a file in the current shell
+source $MYCONDA
+
+## activate the conda environment
+conda activate $MYENV
+
+## run pcangsd
+python $PCANGSD -beagle $DATADIR'/'$MYINFILE -o $OUTDIR'/'$OUTPREFIX -threads ${SLURM_JOB_CPUS_PER_NODE}
 
 ```
