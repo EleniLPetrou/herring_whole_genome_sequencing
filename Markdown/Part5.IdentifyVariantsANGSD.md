@@ -114,6 +114,10 @@ angsd -b $MYBAMLIST -ref $REFGENOME -out $OUTNAME \
 	[ALL done] walltime used =  407206.00 sec
 ```	
 
+Wow, so ~11.3 million SNPs were preent at > 0.1 MAF and genotyped in over 50% of samples. Not bad! I moved these output files to this folder:
+
+/gscratch/scrubbed/elpetrou/angsd
+
 
  
 
