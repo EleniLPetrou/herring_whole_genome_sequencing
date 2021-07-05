@@ -70,9 +70,9 @@ PCANGSD=/gscratch/merlab/software/miniconda3/envs/pcangsd/pcangsd.py #path to pc
 
 ## data information
 DATADIR=/gscratch/scrubbed/elpetrou/angsd #path to input files (beagle file)
-OUTDIR=/gscratch/scrubbed/elpetrou/results #path to output files
-MYINFILE=all_samples_maf0.01.beagle.gz #name of beagle file
-OUTPREFIX=pca_all_samples_maf0.01 #prefix for output files
+OUTDIR=/gscratch/scrubbed/elpetrou/angsd #path to output files
+MYINFILE=all_samples_maf0.05_miss0.3.nuclear.beagle.gz #name of beagle file
+OUTPREFIX=results_pca_all_samples_maf0.05_miss0.3.nuclear #prefix for output files
 
 ##################################################################
 ## Activate the conda environment:
