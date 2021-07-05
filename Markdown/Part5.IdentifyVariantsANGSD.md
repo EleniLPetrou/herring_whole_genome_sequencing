@@ -159,7 +159,7 @@ angsd sites index $ANGSD_SITES
 gzip $ANGSD_MAF
 
 ```
-From this exploratory analysis, I saw that filtering the dataset more stringently would produce a data set of approximately 600K SNPs. This seems like a good balance between have a reasonable amount of missing data, a robust number of variable sites, and a manageable file size for downstream analyses. I decided to proceed with these filtering criteria.
+From this exploratory analysis, I saw that filtering the dataset more stringently would produce a data set of approximately 600K SNPs. This seems like a good balance between having a reasonable amount of missing data, a robust number of variable sites, and a manageable file size for downstream analyses. I decided to proceed with these filtering criteria.
 
 ## re-run angsd with more stringent filtering criteria
 Script name = "angsd_variable_sites.sh"
@@ -258,13 +258,16 @@ gunzip MYINFILE.gz
 LINECOUNT=$(grep NC_009577.1* $MYINFILE | wc -l)
 
 # Create a new beagle file that does not contain the lines at the end with the mtDNA loci
-head -n -LINECOUNT $MYINFILE > $MYOUTFILE
+head -n -$LINECOUNT $MYINFILE > $MYOUTFILE
 
-# Gzip the new file
+# Check to make sure there are no mtDNA loci in the output file
+grep NC_009577.1* $MYOUTFILE #ok, all clear, no hits!
+
+# Gzip the beagle file you just created
 gzip $MYOUTFILE
 
 ```
-
+The final filtered data file contained 607,980 nuclear SNPs.
 
 
 
