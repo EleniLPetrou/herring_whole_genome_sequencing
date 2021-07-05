@@ -116,9 +116,9 @@ Done reading data waiting for calculations to finish
 Wow, so ~11.3 million SNPs were preent at > 0.1 MAF and genotyped in over 50% of samples. Not bad! I moved these output files to this folder: /gscratch/scrubbed/elpetrou/angsd
 
 
-## Create a stringently filtered data set by using the -sites filter in angsd. 
+## What might a stringently filtered data set look like? 
 
-For a SNP to be reatined in the stringently filtered data set, it had to have a maf > 0.05 and less than 30% missing data. I also removed SNPs that were in mtDNA. This is how I made the -sites file from a .mafs file:
+I explored what would happen if I filtered the data more stringently. For a SNP to be retained in the stringently filtered data set, it had to have a maf > 0.05, less than 30% missing data, and be a nuclear locus (no mtDNA). This is how I filtered the .mafs file produced by angsd to come up with a list of stringently filtered loci:
 
 ``` bash
 # filter_angsd_sites.sh
@@ -159,21 +159,22 @@ angsd sites index $ANGSD_SITES
 gzip $ANGSD_MAF
 
 ```
- 
-## re-run angsd with the -sites file to output genotype likelihoods for the stringently filtered data set. 
+From this exploratory analysis, I saw that filtering the dataset more stringently would produce a data set of approximately 600K SNPs. This seems like a good balance between have a reasonable amount of missing data, a robust number of variable sites, and a manageable file size for downstream analyses. I decided to proceed with these filtering criteria.
+
+## re-run angsd with more stringent filtering criteria
+Script name = "angsd_variable_sites.sh"
 
 ``` bash
-
 #!/bin/bash
 #SBATCH --job-name=elp_angsd_variants
 #SBATCH --account=merlab
 #SBATCH --partition=compute-hugemem
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=20
+#SBATCH --ntasks-per-node=10
 ## Walltime (days-hours:minutes:seconds format)
-#SBATCH --time=5-12:00:00
+#SBATCH --time=6-12:00:00
 ## Memory per node
-#SBATCH --mem=600G
+#SBATCH --mem=200G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elpetrou@uw.edu
 
@@ -186,8 +187,7 @@ MYENV=angsd_env #name of the conda environment containing samtools software.
 DATADIR=/mmfs1/gscratch/scrubbed/elpetrou/bam #directory with realigned bam files
 REFGENOME=/gscratch/merlab/genomes/atlantic_herring/GCF_900700415.1_Ch_v2.0.2_genomic.fna #path to fasta genome
 MYBAMLIST=bam.filelist # name of text file with bam files
-SITES_FILE=/gscratch/scrubbed/elpetrou/angsd/all_samples_maf0.05_miss0.3_NoMtDNA.sites
-OUTNAME=all_samples_maf0.05_miss0.3_NoMtDNA #output file name
+OUTNAME=all_samples_maf0.05_miss0.3 #output file name
 
 ## Specify filtering values for angsd
 QUAL=20 #quality threshold for minMapQ and minQ filtering options
@@ -217,11 +217,11 @@ ls *realigned.bam > $MYBAMLIST
 angsd -b $MYBAMLIST -ref $REFGENOME -out $OUTNAME \
 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 \
 -minMapQ $QUAL -minQ $QUAL -minInd $MININD -setMinDepth $MINDEPTH -setMaxDepth $MAXDEPTH \
--minMaf $MINMAF -SNP_pval $PVAL -sites $SITES_FILE \
--GL 1 -doGlf 2 -doMaf 2 -doMajorMinor 3 -doCounts 1 -nThreads ${SLURM_JOB_CPUS_PER_NODE}
+-minMaf $MINMAF -SNP_pval $PVAL \
+-GL 1 -doGlf 2 -doMaf 2 -doMajorMinor 1 -doCounts 1 -nThreads ${SLURM_JOB_CPUS_PER_NODE}
 
 
-## Nina's advice: As a general guidance, -GL 1, -doMaf 1/2 and -doMajorMinor 1 should be the preferred choice when data uncertainty is high (unless you have a sites file, in which case -doMajorMinor 3)
+## Nina's advice: As a general guidance, -GL 1, -doMaf 1/2 and -doMajorMinor 1 should be the preferred choice when data uncertainty is high
 
 ## Explanation of other terms used in my code:
 ##-uniqueOnly 1 #Discards reads that doesnt map uniquely
@@ -231,9 +231,45 @@ angsd -b $MYBAMLIST -ref $REFGENOME -out $OUTNAME \
 ##-doGlf 2 #output a beagle likelihood file (ending in .beagle.gz)
 ##-doMaf 2 #estimate allele frequencies using allele frequency (fixed major unknown minor)
 ##-doMajorMinor 1 #Infer major and minor alleles from genotype likelihoods
-##-doMajorMinor3: use major and minor from a file (requires -sites file.txt)
 ## -doCounts 1 #calculate various count statistics
 
 ```
+At the end of this analysis, 607,988 SNPs were retained. However, some of these SNPs were in the mtDNA. I decided to remove these loci so I could have a data set that consisted of diploid, nuclear loci. I did this using a simple bash script.
+
+script name: "remove_mtDNA_from_beagle.sh"
+
+
+``` bash
+# Request compute time on an interactive node
+srun -p compute-hugemem -A merlab --nodes=1 --ntasks-per-node=1 --time=02:00:00 --mem=40G --pty /bin/bash
+
+# Specify beagle file that contains the genotype likelihoods
+MYINFILE=all_samples_maf0.05_miss0.3.beagle
+
+# Specify the name of the output file
+MYOUTFILE=all_samples_maf0.05_miss0.3.nuclear.beagle
+
+# unzip the beagle file
+gunzip MYINFILE.gz
+
+# The mtDNA loci are at the end of the beagle file because of the order in which the chromosomes appear in the reference genome. The mtDNA is specified by this "chromosome" id:NC_009577.1
+
+# Count the number of lines in the beagle file that contain MtDNA
+LINECOUNT=$(grep NC_009577.1* $MYINFILE | wc -l)
+
+# Create a new beagle file that does not contain the lines at the end with the mtDNA loci
+head -n -LINECOUNT $MYINFILE > $MYOUTFILE
+
+# Gzip the new file
+gzip $MYOUTFILE
+
+```
+
+
+
+
+
+
+
 
 
