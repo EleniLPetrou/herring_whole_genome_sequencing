@@ -39,6 +39,8 @@ python pcangsd.py -h
 ```
 NB: in the first trial runs of pcangsd, I tried to input beagle files with 11 million and 5 million SNPS, respectively. This caused pcangsd to exit prematurely with this warning: exit code 139 (segmentation fault, core dumped). After googling this error, I came to the hypothesis that the program was running out of memory (apparently 700 Gb was not enough). To test this hypothesis, I created a smaller .beagle.gz file by retaining only the first 6 million lines of the original file ``` head -n 600000 all_samples_maf0.05.beagle > test.beagle``` and used this in pcangsd. This analysis ran to completion, so the problem was indeed a memory issue (phew!). I will filter the genotype liklihoods more stringently (maf >0.05, max missing data per SNP = 30%) to get approximately 600,000 SNPs and then I will run pcangsd again. 
 
+Update 210210705: Upon further investigation, I don't think that this segmentation error was entirely a memory issue. I filtered the dataset stringently (maf > 0.05 , max missing data per SNP = 30%) to get 607,998 SNPs and the program crashed again. Next I tried the following: I removed the mtDNA loci at the end of file and pcangsd ran to completion. I am not sure of there was something amiss with the last character of the file or if pcangsd can only handle diploid loci. At any rate, moving forward I decided to create a beagle file with no mtDNA loci and analyze that with pcangsd.
+
 
 ## Next, I ran PCAngsd using some genotype likelihood files that I created in angsd
 
