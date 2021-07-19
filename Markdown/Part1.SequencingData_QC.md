@@ -136,7 +136,7 @@ The sequencing quality looks really great for almost all samples, hurray!
 
 ![phred_plot](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Markdown/plots/plot_fastqc_mean_qual_scores_raw.png)
 
-Below you can see the adapter content in one sample (CHPT16_041_R1). Bloody hell, that is a lot of adapter content for a sample that was cleaned at 0.65X Ampure beads and whose average library size was probably around 750 bp. I guess I should have been more brutal during size selection, ugh.
+Below you can see the adapter content in one sample (CHPT16_041_R1). Suprising amount of adapter content for a sample that was cleaned at 0.65X Ampure beads and whose average library size was probably around 750 bp. 
 
 ![adapter content untrimmed fastq](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Markdown/plots/adapter_content_CHPT16_041_R1.fastq.png)
 
