@@ -61,11 +61,17 @@ I used ngsLD to estimate linkage disequilibrium in the herring data set.
 Important ngsLD parameters:
 
   --probs: specification of whether the input is genotype probabilities (likelihoods or posteriors)?
+  
   --n_ind INT: sample size (number of individuals).
+  
   --n_sites INT: total number of sites.
+  
   --max_kb_dist DOUBLE: maximum distance between SNPs (in Kb) to calculate LD. Set to 0(zero) to disable filter. [100]
+  
   --max_snp_dist INT: maximum distance between SNPs (in number of SNPs) to calculate LD. Set to 0 (zero) to disable filter. [0]
+  
   --n_threads INT: number of threads to use. [1]
+  
   --out FILE: output file name. [stdout]
 
 Update as of 20210803: If you set --max_kb_dist to zero, this program will do all pairwise comparisons across all snps, which will create an absolutely massive file and take an eon to complete. I looked up the maximum chromosome length for the Atlantic herring genome on NCBI, https://www.ncbi.nlm.nih.gov/assembly/GCF_900700415.2#/st: and it is 33,084,258. I will use this value as the maximum distance between SNPs, so LD between SNPs on different chromsomes (with "Inf" distance separating them) does not get calculated.
