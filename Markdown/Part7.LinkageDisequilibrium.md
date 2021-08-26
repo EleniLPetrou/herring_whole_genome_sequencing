@@ -218,5 +218,9 @@ done
 
 ```
 
-## Interpret the ngsLD results
+## Interpret and summarize the ngsLD results
 ngsLD outputs a TSV file with LD results for all pairs of sites for which LD was calculated, where the first two columns are positions of the SNPs, the third column is the distance (in bp) between the SNPs, and the following 4 columns are the various measures of LD calculated (r^2 from pearson correlation between expected genotypes, D from EM algorithm, D' from EM algorithm, and r^2 from EM algorithm). 
+
+- Summarize LD R2 statistics in blocks on each chromosome. (add python scripts)
+- PLotting script for heatmap
+- Example plots
