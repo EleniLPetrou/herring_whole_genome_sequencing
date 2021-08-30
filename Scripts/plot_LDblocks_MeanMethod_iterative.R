@@ -35,12 +35,14 @@ ld_df <- file_list %>%
 
 # Triangle heatmap to visualize LD blocks
 
+legend_expression <- expression(italic(R)^{2})
+
 plot1 <- ggplot(ld_df, aes(Pos1, Pos2)) +
   theme_bw() +
   xlab('Position on LG (Mb)') +
   ylab('Position on LG (Mb)') +
   geom_tile(aes(fill = R2)) +
-  scale_fill_gradientn(colors = brewer.pal(7,"YlGnBu"), na.value = "grey90") +
+  scale_fill_gradientn(colors = brewer.pal(7,"YlGnBu"), na.value = "grey90", name = legend_expression) +
   facet_wrap(~factor(linkage_group, levels=c(1:length(file_list)))) +
   #scale_fill_gradient(low = 'grey95', high = 'darkblue', space = 'Lab') +
   theme(axis.text.x = element_text(angle = 90),
