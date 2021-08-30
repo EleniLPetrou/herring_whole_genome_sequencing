@@ -219,8 +219,14 @@ done
 ```
 
 ## Interpret and summarize the ngsLD results
-ngsLD outputs a TSV file with LD results for all pairs of sites for which LD was calculated, where the first two columns are positions of the SNPs, the third column is the distance (in bp) between the SNPs, and the following 4 columns are the various measures of LD calculated (r^2 from pearson correlation between expected genotypes, D from EM algorithm, D' from EM algorithm, and r^2 from EM algorithm). 
+ngsLD outputs a TSV file with LD results for all pairs of sites for which LD was calculated, where the first two columns are positions of the SNPs, the third column is the distance (in bp) between the SNPs, and the following 4 columns are the various measures of LD calculated (r^2 from pearson correlation between expected genotypes, D from EM algorithm, D' from EM algorithm, and r^2 from EM algorithm). For each chromosome, each file was immense (~30 Gb) and so it became apparent that smoe kind of summarizing function would have to be used in order to plot the data in R. 
 
-- Summarize LD R2 statistics in blocks on each chromosome. (add python scripts)
-- PLotting script for heatmap
+Inspired by the analyses conducted by Merot et al. 2021 ("Locally Adaptive Inversions Modulate Genetic Variation at Different Geographic Scales in a Seaweed Fly", https://doi.org/10.1093/molbev/msab143), I decided to summarize LD over blocks (~1 Mb in size), using two different approaches:
+  
+  1. [LD values in the 2% quantile](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/ld_by_blocks_optimized_gzinput.py)
+  2. [Mean LD values](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/ld_by_blocks_mean_gzinput.py)
+
+Subsequently, I plotted the results of these analyses using an [R script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/plot_LDblocks_MeanMethod_iterative.R)
+
+
 - Example plots
