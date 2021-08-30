@@ -169,9 +169,14 @@ Both of the python scripts above were run on Klone using this [slurm script](htt
 
 Subsequently, I plotted the results of these analyses using this [R script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/plot_LDblocks_MeanMethod_iterative.R)
 
+Here are the results, reporting the 2% quantile over 1 Mb blocks:
+
+![plot_LDblocks_QuantMethod](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Markdown/plots/plot_LDblocks_QuantMethod.png)
+
 Here are the results, using the mean as the summary statistic over 1 Mb blocks:
 
 ![plot_LDblocks_MeanMethod](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Markdown/plots/plot_LDblocks_MeanMethod.png)
+
 
 Regions in high LD are clearly visible on LGs 6, 7, 8, 12, and 15. This is a nice finding as it is also corroborated by our RADseq data.
 
