@@ -155,78 +155,24 @@ $NGSLD/ngsLD \
 ```
 
 ## Parse results of LD analysis
-The output file was immense (500 Gb), so I split the results by chromosome to make plotting and manipulating the results easier. The resulting files are about ~30 Gb each (gulp).
 
-``` bash
-#!/bin/bash
-#SBATCH --job-name=subsample_LD_per_chrom
-#SBATCH --account=merlab
-#SBATCH --partition=compute-hugemem
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=8
-## Walltime (days-hours:minutes:seconds format)
-#SBATCH --time=1-12:00:00
-## Memory per node
-#SBATCH --mem=100G
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=elpetrou@uw.edu
+ngsLD outputs a TSV file with LD results for all pairs of sites for which LD was calculated, where the first two columns are positions of the SNPs, the third column is the distance (in bp) between the SNPs, and the following 4 columns are the various measures of LD calculated (r^2 from pearson correlation between expected genotypes, D from EM algorithm, D' from EM algorithm, and r^2 from EM algorithm). The output file was immense (500 Gb) and overwhelming. To make plotting and manipulating the results easier, I split the results by chromosome using a [unix script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/ngsld_results_split_chroms.sh). 
 
-###########################################################
-## Specify data directory and input file name
-DATADIR=/gscratch/scrubbed/elpetrou/ngsld
-MYFILE=all_samples_maf0.05_miss0.3.nuclear.ld
-
-## Specify list of chromosome names
-LIST_CHROM=(
-NC_045152.1
-NC_045153.1
-NC_045154.1
-NC_045155.1
-NC_045156.1
-NC_045157.1
-NC_045158.1
-NC_045159.1
-NC_045160.1
-NC_045161.1
-NC_045162.1
-NC_045163.1
-NC_045164.1
-NC_045165.1
-NC_045166.1
-NC_045167.1
-NC_045168.1
-NC_045169.1
-NC_045170.1
-NC_045171.1
-NC_045172.1
-NC_045173.1
-NC_045174.1
-NC_045175.1
-NC_045176.1
-NC_045177.1
-)
-
-## Save the LD output for each chromosome seprately in a text file
-
-cd $DATADIR
-
-for CHROM in ${LIST_CHROM[@]}
-do
-    echo $CHROM
-    grep $CHROM* $MYFILE > $MYFILE.$CHROM.txt
-done
-
-```
 
 ## Interpret and summarize the ngsLD results
-ngsLD outputs a TSV file with LD results for all pairs of sites for which LD was calculated, where the first two columns are positions of the SNPs, the third column is the distance (in bp) between the SNPs, and the following 4 columns are the various measures of LD calculated (r^2 from pearson correlation between expected genotypes, D from EM algorithm, D' from EM algorithm, and r^2 from EM algorithm). For each chromosome, each file was immense (~30 Gb) and so it became apparent that smoe kind of summarizing function would have to be used in order to plot the data in R. 
-
-Inspired by the analyses conducted by Merot et al. 2021 ("Locally Adaptive Inversions Modulate Genetic Variation at Different Geographic Scales in a Seaweed Fly", https://doi.org/10.1093/molbev/msab143), I decided to summarize LD over blocks (~1 Mb in size), using two different approaches:
+For each chromosome, each LD results file was still huge (~30 Gb) and so it became apparent that smoe kind of summarizing function would have to be used in order to plot the data in R. Inspired by the analyses conducted by Merot et al. 2021 ("Locally Adaptive Inversions Modulate Genetic Variation at Different Geographic Scales in a Seaweed Fly", https://doi.org/10.1093/molbev/msab143), I decided to summarize LD over blocks (~1 Mb in size), using two different approaches:
   
   1. [LD values in the 2% quantile](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/ld_by_blocks_optimized_gzinput.py)
   2. [Mean LD values](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/ld_by_blocks_mean_gzinput.py)
 
-Subsequently, I plotted the results of these analyses using an [R script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/plot_LDblocks_MeanMethod_iterative.R)
+Both of the python scripts above were run on Klone using this [slurm script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/ld_by_blocks_sbatch.sh)
+
+Subsequently, I plotted the results of these analyses using this [R script](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Scripts/plot_LDblocks_MeanMethod_iterative.R)
+
+Here are the results, using the mean as the summary statistic over 1 Mb blocks:
+
+![plot_LDblocks_MeanMethod](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/main/Markdown/plots/plot_LDblocks_MeanMethod.png)
+
+Regions in high LD are clearly visible on LGs 6, 7, 8, 12, and 15. This is a nice finding as it is also corroborated by our RADseq data.
 
 
-- Example plots
