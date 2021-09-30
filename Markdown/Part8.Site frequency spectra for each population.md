@@ -13,6 +13,32 @@ conda install -c bioconda angsd=0.921 htslib=1.9
 
 ```
 
+### Create a sites file for angsd that specifies the SNPs you want to use in the downstream angsd analysis
+
+``` bash
+# How to make a sites file for angsd from a .mafs file
+
+# Request interactive node
+srun -p compute-hugemem -A merlab --nodes=1 --ntasks-per-node=1 --time=01:00:00 --mem=80G --pty /bin/bash
+
+# activate conda angsd
+
+conda activate angsd_env
+
+# Specify paths and file names
+DATADIR=/gscratch/scrubbed/elpetrou/angsd
+MAFS_FILE=all_samples_maf0.05_miss0.3.nuclear.mafs
+SITES_FILE=$MAFS_FILE'.sites'
+
+# Make the sites file
+cd $DATADIR
+cut -f 1,2,3,4 $MAFS_FILE > $SITES_FILE 
+
+# index the sites file
+angsd sites index $SITES_FILE
+```
+
+
 ## Generate site frequency likelihoods for each population and estimate the site frequency spectrum (1-dimensional) for each population
 
 ``` bash
