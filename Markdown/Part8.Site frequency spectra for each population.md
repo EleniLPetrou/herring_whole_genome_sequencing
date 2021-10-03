@@ -247,5 +247,134 @@ done < $POP_FILE
 conda deactivate
 
 ```
+## Concantenate results of pairwise population FST and save them to a text file
+
+``` r
+# The purpose of this script is to compile data on pairwise population fst 
+# that was output by angsd
+
+################################################################################
+# Load libraries
+library(tidyverse)
+
+# To run this code, put all of your angsd output files in a single directory
+DATADIR <- "/gscratch/scrubbed/elpetrou/angsd_sfs/"
+
+# set working directory
+setwd(DATADIR)
+#list.files()
+
+# Specify the names of data files used
+fileNames <- Sys.glob("*.global.fst") #this is R's version of a wildcard
 
 
+################################################################################
+# Part 1: Create a concatenated dataframe and save it as a text file
+# read in the files and start data processing
+
+temp_df <- map(fileNames, read.table, sep = '', header = FALSE) %>%
+  set_names(fileNames) %>%
+  bind_rows(.id = 'comparison')
+
+output_df <- temp_df %>%
+  separate(comparison, c("Pop1", "Pop2"), remove = FALSE) %>%
+  rename(unweighted_fst = V1, weighted_fst = V2 )
+
+# save the dataframe as a text file
+write.table(output_df, file = "pairwise_population_FST_concatenated_results.txt", 
+            append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = FALSE,
+            col.names = TRUE)
+
+```
+
+## Plot the pairwise population FST results
+
+``` r
+# Load libraries
+library(tidyverse)
+library(reshape2)
+
+# Specify data directory containing input file
+DATADIR <- "C:/Users/elpet/OneDrive/Documents/herring_postdoc/results"
+
+# Specify name of input file
+FILENAME <- "pairwise_population_FST_concatenated_results.txt"
+
+# Specify name of output file
+OUTFILE <- "pairwise_population_FST_all_samples_maf0.05_miss0.3.nuclear.pdf"
+
+# Specify a custom order for the populations in the heatmap (WA by spawn time, then AK by spawn time)
+
+my_levels <- c("SQUA14", "PORT14", "SMBY15", "QLBY19", "ELBY15", "CHPT16", 
+               "CRAIG18", "KRES19", "SITKA17", "CRAW20", "OLGA19", "BERN16")
+
+##############################################################################
+# set working directory
+setwd(DATADIR)
+
+# Read in the data and manipulate it for plotting
+fst_df <- read.table(FILENAME, header = TRUE)
+
+# make a temporary df with the population names joined and bind them together, 
+# to make the full pairwise matrix.
+
+temp_df <- fst_df %>%
+  rename(Pop1 = Pop2, Pop2 = Pop1)
+
+full_df <- rbind(fst_df, temp_df)
+
+full_df$weighted_fst <- round(full_df$weighted_fst, digits = 3)
+
+# Order the levels according to a custom order  
+
+full_df$Pop1 <- factor(x = full_df$Pop1,
+                       levels = my_levels, 
+                       ordered = TRUE)
+
+full_df$Pop2 <- factor(x = full_df$Pop2,
+                       levels = my_levels, 
+                       ordered = TRUE)
+
+###Part 2: remove duplicate pairwise-columns
+
+# Turn the dataframe into a matrix
+
+my_mat <- acast(full_df, Pop1~Pop2, value.var = "weighted_fst")
+
+## Specify some functions to retrieve upper part of matrix
+# Get lower triangle of the correlation matrix
+
+get_lower_tri <- function(Fstmat){
+  Fstmat[upper.tri(Fstmat)] <- NA
+  return(Fstmat)
+}
+
+## subset the matrix
+lower_tri <- get_lower_tri(my_mat)
+lower_tri
+
+##Use the package reshape to melt the matrix into a df again:
+final_df <- melt(lower_tri, value.name = "weighted_fst")
+
+# Make a heatmap and visualize the FST values
+
+heatmap_plot <- ggplot(data = final_df, aes(Var1, Var2, fill = weighted_fst)) +
+  geom_raster() +
+  geom_text(aes(label = weighted_fst), size = 2) +
+  scale_fill_distiller(palette = "Spectral", na.value = "white") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1),
+        axis.text.y = element_text(angle = 0, vjust = 1, size = 8, hjust = 1)) +
+  ylab("Population A") +
+  xlab("Population B") +
+  labs(fill = expression(italic(F[ST]))) +
+  coord_fixed() 
+
+heatmap_plot
+
+# save pdf to file
+
+ggsave(OUTFILE, heatmap_plot)
+
+```
