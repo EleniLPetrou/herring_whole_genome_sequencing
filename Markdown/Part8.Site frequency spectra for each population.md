@@ -378,3 +378,8 @@ heatmap_plot
 ggsave(OUTFILE, heatmap_plot)
 
 ```
+
+Here are the results, shown as a heatmap:
+
+![plot_FST_heatmap](https://github.com/EleniLPetrou/herring_whole_genome_sequencing/blob/720ef4d740d470b4c00c61655f181bab25ca7941/Markdown/plots/pairwise_population_FST_all_samples_maf0.05_miss0.3.nuclear.png)
+
