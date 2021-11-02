@@ -1,61 +1,46 @@
-# The purpose of this script is to compile and plot data on sequencing read depth
-# after bam files have been filtered and indel realignment has taken place. 
-# As input is takes the .depth files that are output from samtools depth.
+# The purpose of this script is to plot data on sequencing read depth
+# As input it takes the file produced by parse_realigned_sequencing_depth.R
 
 ################################################################################
 # Load libraries
 library(tidyverse)
 
-# To run this code, put all of your depth files in a single directory
-#DATADIR <- "C:/Users/elpet/OneDrive/Documents/herring_postdoc/realigned_bam"
-DATADIR <- "/gscratch/scrubbed/elpetrou/bam/"
+# Specify the directory containing a tab-delimited text file with sequencing depth for each individual sample
+DATADIR <- "E:/Dropbox (MERLAB)/Eleni/postdoc_wgs/results"
+
+# Specify names of files
+INFILE <- "sequencing_depth_after_realignment_concatenated_results.txt" #input file
+OUTFILE <- "sequencing_depth_after_realignment.pdf" #output file
+METAFILE <- "E:/Dropbox (MERLAB)/Eleni/postdoc_wgs/sample_metadata/mapping_metadata.txt" # full path to sampling location metadata
 
 # set working directory
 setwd(DATADIR)
-#list.files()
 
-# Specify the names of data files used
-fileNames <- Sys.glob("*.gzdepth_results.txt") #this is R's version of a wildcard
+##############################################################################
+# Read in the data
+depth_df <- read.delim(INFILE)
+meta_df <- read.delim(METAFILE)
 
-
-################################################################################
-# Part 1: Create a concatenated dataframe and save it as a text file
-# read in the files and start data processing
-
-output_df = data.frame() #initialize empty dataframe
+# Specify that the populations should appear in a specific order
+mylevels <- c("Squaxin", "Pt. Orchard", "Skagit", "Quilcene", "Elliott Bay", "Cherry Pt.", 
+              "Craig", "Krestof","Sitka", "W. Crawfish", "Olga Pt.", "Berners Bay")
 
 
-for (fileName in fileNames) {
-  print(fileName) #counter
-  df <- read.delim(fileName)
-  output_df <- rbind(output_df, df) # add each individual dataframe to a big dataframe
-}
+
+# Join these data frames for plotting
+
+plotting_df <- left_join(depth_df, meta_df, by = "population")
+plotting_df$full_name <- factor(plotting_df$full_name, levels = mylevels)
 
 
-# Mean depth and standard deviation over all individuals
-output_df$mean_depth <- as.numeric(output_df$mean_depth)
-output_df$sd_depth <- as.numeric(output_df$sd_depth)
-
-# save the dataframe as a text file
-write.table(output_df, file = "sequencing_depth_after_realignment_concatenated_results.txt", 
-            append = FALSE, quote = FALSE, sep = "\t",
-            eol = "\n", na = "NA", dec = ".", row.names = FALSE,
-            col.names = TRUE)
-
-
-################################################################################
-# Part2 : Plot the depth distribution
-
-# read in the concatenated dataframe
-
-#output_df <- read.delim("sequencing_depth_after_realignment_concatenated_results.txt")
-
-#allow scientific notation
+# Allow scientific notation
 options(scipen = 0) 
 
-plot1 <- ggplot(output_df, aes(x = population, color = population)) +
-  geom_point(aes(x = population, y = mean_depth)) +
-  geom_boxplot(aes(x = population, y = mean_depth)) +
+
+
+plot1 <- ggplot(plotting_df, aes(x = full_name, color = state)) +
+  geom_point(aes(x = full_name, y = mean_depth)) +
+  geom_boxplot(aes(x = full_name, y = mean_depth)) +
   ylab("sequencing depth") +
   xlab("population") +
   theme_bw() +
@@ -65,6 +50,6 @@ plot1
 
 
 # save the plot as a pdf
-ggsave("sequencing_depth_after_realignment.pdf", plot1)
+ggsave(OUTFILE, plot1)
 
 
