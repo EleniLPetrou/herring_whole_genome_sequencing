@@ -148,7 +148,7 @@ done
 
 ```
 
-Following this, I plotted the output data using another R script ("plot_realigned_sequencing_depth.R").
+Following this, I parsed the output data using another R script ("parse_realigned_sequencing_depth.R").
 
 ``` R
 # The purpose of this script is to compile and plot data on sequencing read depth
@@ -161,11 +161,11 @@ library(tidyverse)
 
 # To run this code, put all of your depth files in a single directory
 #DATADIR <- "C:/Users/elpet/OneDrive/Documents/herring_postdoc/realigned_bam"
-DATADIR <- "/gscratch/scrubbed/elpetrou/bam/"
+DATADIR <- "E:/Dropbox (MERLAB)/Eleni/postdoc_wgs/results"
 
 # set working directory
 setwd(DATADIR)
-#list.files()
+list.files()
 
 # Specify the names of data files used
 fileNames <- Sys.glob("*.gzdepth_results.txt") #this is R's version of a wildcard
@@ -181,7 +181,7 @@ output_df = data.frame() #initialize empty dataframe
 for (fileName in fileNames) {
   print(fileName) #counter
   df <- read.delim(fileName)
-  output_df <- rbind(output_df, df) # add each individual dataframe to a big dataframe
+output_df <- rbind(output_df, df) # add each individual dataframe to a big dataframe
 }
 
 
@@ -195,20 +195,54 @@ write.table(output_df, file = "sequencing_depth_after_realignment_concatenated_r
             eol = "\n", na = "NA", dec = ".", row.names = FALSE,
             col.names = TRUE)
 
+```
+
+Finally, I plotted the results using another R script ("plot_realigned_sequencing_depth.R")
+
+``` r
+# The purpose of this script is to plot data on sequencing read depth
+# As input it takes the file produced by parse_realigned_sequencing_depth.R
 
 ################################################################################
-# Part2 : Plot the depth distribution
+# Load libraries
+library(tidyverse)
 
-# read in the concatenated dataframe
+# Specify the directory containing a tab-delimited text file with sequencing depth for each individual sample
+DATADIR <- "E:/Dropbox (MERLAB)/Eleni/postdoc_wgs/results"
 
-#output_df <- read.delim("sequencing_depth_after_realignment_concatenated_results.txt")
+# Specify names of files
+INFILE <- "sequencing_depth_after_realignment_concatenated_results.txt" #input file
+OUTFILE <- "sequencing_depth_after_realignment.pdf" #output file
+METAFILE <- "E:/Dropbox (MERLAB)/Eleni/postdoc_wgs/sample_metadata/mapping_metadata.txt" # full path to sampling location metadata
 
-#allow scientific notation
+# set working directory
+setwd(DATADIR)
+
+##############################################################################
+# Read in the data
+depth_df <- read.delim(INFILE)
+meta_df <- read.delim(METAFILE)
+
+# Specify that the populations should appear in a specific order
+mylevels <- c("Squaxin", "Pt. Orchard", "Skagit", "Quilcene", "Elliott Bay", "Cherry Pt.", 
+              "Craig", "Krestof","Sitka", "W. Crawfish", "Olga Pt.", "Berners Bay")
+
+
+
+# Join these data frames for plotting
+
+plotting_df <- left_join(depth_df, meta_df, by = "population")
+plotting_df$full_name <- factor(plotting_df$full_name, levels = mylevels)
+
+
+# Allow scientific notation
 options(scipen = 0) 
 
-plot1 <- ggplot(output_df, aes(x = population, color = population)) +
-  geom_point(aes(x = population, y = mean_depth)) +
-  geom_boxplot(aes(x = population, y = mean_depth)) +
+
+
+plot1 <- ggplot(plotting_df, aes(x = full_name, color = state)) +
+  geom_point(aes(x = full_name, y = mean_depth)) +
+  geom_boxplot(aes(x = full_name, y = mean_depth)) +
   ylab("sequencing depth") +
   xlab("population") +
   theme_bw() +
@@ -218,9 +252,13 @@ plot1
 
 
 # save the plot as a pdf
-ggsave("sequencing_depth_after_realignment.pdf", plot1)
+ggsave(OUTFILE, plot1)
+
+
+
 
 ```
+
 # Results
 
 The mean sequencing depth across the entire reference genome was 0.8X (median = 0.79, range = 0.24 – 4.73X)
