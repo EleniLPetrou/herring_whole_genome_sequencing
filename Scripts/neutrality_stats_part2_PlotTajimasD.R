@@ -1,5 +1,6 @@
 # Load libraries
 library(tidyverse)
+library(mgcv)
 
 # Specify data directory and file names
 BASEDIR <- "E:/Dropbox (MERLAB)/Eleni/postdoc_wgs/results/angsd/all_samples_maf0.05_miss_0.3/sfs"
@@ -100,8 +101,11 @@ plot1
 TajD_plot <- ggplot() +
   
   # Add dotted lines to mark inversion boundaries
-  geom_vline(aes(xintercept = inversion_start), thetas_df, linetype = 3, color = "darkgray", size = 1) +
-  geom_vline(aes(xintercept = inversion_stop), thetas_df, linetype = 3, color = "darkgray", size = 1) +
+  geom_vline(aes(xintercept = inversion1_start), thetas_df, linetype = 3, color = "darkgray", size = 1) +
+  geom_vline(aes(xintercept = inversion1_stop), thetas_df, linetype = 3, color = "darkgray", size = 1) +
+  geom_vline(aes(xintercept = inversion2_start), thetas_df, linetype = 3, color = "darkgray", size = 1) +
+  geom_vline(aes(xintercept = inversion2_stop), thetas_df, linetype = 3, color = "darkgray", size = 1) +
+  
   
   # plot Tajimas D
   geom_smooth(data = thetas_df, aes(x = midpos_Mb, y = Tajima, linetype = Population, color = category), 
@@ -118,7 +122,6 @@ TajD_plot <- ggplot() +
 
 TajD_plot
 
-library(mgcv)
 
 mod_gam1 <- gam(Tajima ~ s(midpos_Mb, bs = "cr"), data = thetas_df)
 summary(mod_gam1)
